@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 import torch
 from collections import OrderedDict
 from loguru import logger
-from offlinerl.utils.exp import init_exp_logger
+from offlinerl.utils.exp import init_exp_logger, init_tb_logger
 from offlinerl.utils.io import create_dir, download_helper, read_json
 from offlinerl.utils.logger import log_path
 
@@ -25,8 +25,9 @@ class BaseAlgo(ABC):
         else:
             repo = None
         
-        self.repo = repo
+        self.repo = repo if repo is not None else 'runs'
         self.exp_logger = init_exp_logger(repo = repo, experiment_name = exp_name)
+        self.tb_logger = init_tb_logger(repo, exp_name)
         if self.exp_logger.repo is not None:  # a naive fix of aim exp_logger.repo is None
             self.index_path = self.exp_logger.repo.index_path
         else:
@@ -35,10 +36,15 @@ class BaseAlgo(ABC):
                 logger.info('{} dir is not exist, create {}',repo, repo)
                 os.system(str("cd " + os.path.join(repo,"../") + "&& aim init"))
             self.index_path = repo
+
+        self.index_path = os.path.join(repo, exp_name)
         self.models_save_dir = os.path.join(self.index_path, "models")
         self.metric_logs = OrderedDict()
         self.metric_logs_path = os.path.join(self.index_path, "metric_logs.json")
         create_dir(self.models_save_dir)
+
+        with open(os.path.join(self.index_path, 'config.json'), 'w') as fp:
+            json.dump(args, fp)
 
         self.exp_logger.set_params(args, name='hparams')
         
@@ -48,6 +54,7 @@ class BaseAlgo(ABC):
         for k,v in result.items():
             logger.info('{} : {}',k, v)
             self.exp_logger.track(v, name=k.split(" ")[0], epoch=epoch,)
+            self.tb_logger.add_scalar(k, v, epoch)
         
         self.metric_logs[str(epoch)] = result
         with open(self.metric_logs_path,"w") as f:

@@ -40,6 +40,7 @@ soft_target_tau = 5e-3
 
 horizon = 5
 lam = 2
+dumbbell = 0
 
 #tune
 params_tune = {

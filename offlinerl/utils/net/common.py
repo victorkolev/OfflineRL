@@ -109,7 +109,8 @@ class Net(nn.Module):
     ) -> Tuple[torch.Tensor, Any]:
         """Mapping: s -> flatten -> logits."""
 
-        s = s.reshape(s.size(0), -1)
+        if len(s.shape) > 1
+            s = s.reshape(s.size(0), -1)
         logits = self.model(s)
         if self.dueling is not None:  # Dueling DQN
             q, v = self.Q(logits), self.V(logits)

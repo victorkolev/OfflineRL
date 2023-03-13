@@ -35,8 +35,11 @@ def test_one_trail_sp_local(env, policy):
     act_dim = env.action_space.shape[0]
     
     while not done:
-        state = state
-        action = policy.get_action(state).reshape(-1, act_dim)
+        if len(state.shape) == 1:
+            state = state.reshape(1, -1)
+            action = policy.get_action(state).reshape(act_dim)
+        else:
+            action = policy.get_action(state).reshape(-1, act_dim)
         # print("actions: ", action[0:3,])
         state, reward, done, _ = env.step(action)
         rewards += reward
